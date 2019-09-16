@@ -11,14 +11,20 @@ func main() {
 
 	// Perhaps the most basic file reading task is
 	// slurping a file's entire contents into memory.
-	dat, err := ioutil.ReadFile(filename)
+	sourceCodeBytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("Failed to read file: %s\n", err)
 		os.Exit(1)
 	}
 
+	sourceCode := string(sourceCodeBytes)
+
 	fmt.Printf("Contents of file '%s':\n\n", filename)
-	fmt.Println(string(dat))
+	fmt.Println(sourceCode)
+
+	for pos, char := range sourceCode {
+		fmt.Printf("Char '%c' at byte %d\n", char, pos)
+	}
 
 	// // You'll often want more control over how and what
 	// // parts of a file are read. For these tasks, start

@@ -2,3 +2,6 @@
 2 3 add $value $set
 # Print result
 $value print
+
+"Gnarly supports unicode 🐈" $unicode set
+$unicode print
