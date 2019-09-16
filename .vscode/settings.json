@@ -1,0 +1,17 @@
+{
+  "go.formatTool": "goimports",
+  "go.buildOnSave": "workspace",
+  "go.enableCodeLens": {
+    "references": false,
+    "runtest": false
+  },
+  "go.lintOnSave": "off",
+  "go.liveErrors": {
+    "enabled": true,
+    "delay": 500
+  },
+  "go.useLanguageServer": false,
+  "cSpell.words": [
+    "Blag"
+  ]
+}

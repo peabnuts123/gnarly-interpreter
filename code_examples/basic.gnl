@@ -1,0 +1,4 @@
+# Add 2 + 3 and store in `$value`
+2 3 add $value $set
+# Print result
+$value print
