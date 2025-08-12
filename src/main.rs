@@ -51,6 +51,7 @@ fn main() {
         match token {
             Token::NumberLiteral(value) => print!("[Number({})] ", value),
             Token::Operator(op) => print!("[Operator({})] ", op),
+            Token::VariableIdentifier(var_name) => print!("[Variable(${var_name})] "),
         }
     }
     println!();

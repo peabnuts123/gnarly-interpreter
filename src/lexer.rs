@@ -15,7 +15,7 @@ enum LexerState {
     // BooleanLiteral,
     // NullLiteral,
     Operator,
-    // Variable,
+    VariableIdentifier,
     // Word,
 }
 
@@ -23,6 +23,7 @@ enum LexerState {
 pub enum Token {
     NumberLiteral(f64),
     Operator(String),
+    VariableIdentifier(String),
 }
 
 impl Token {
@@ -40,6 +41,14 @@ impl Token {
             Err(format!("Cannot create operator token from empty string"))
         } else {
             Ok(Token::Operator(raw_value.to_string()))
+        }
+    }
+
+    pub fn new_variable_identifier(raw_value: &str) -> Result<Self, String> {
+        if raw_value.is_empty() {
+            Err(format!("Cannot create variable identifier token from empty string"))
+        } else {
+            Ok(Token::VariableIdentifier(raw_value.to_string()))
         }
     }
 }
@@ -103,14 +112,22 @@ impl Lexer {
                     self.state = LexerState::NumberLiteral;
                     EvaluateCharResult::Valid
                 } else if SPECIAL_OPERATOR_CHARS.contains(&ch) {
-                    /* Special symbol operator */
+                    /* Operator - Special */
+                    // Special symbols (like +*-/) do not follow the normal regex for operators
+                    // so they are handled separately
                     self.current_token_bytes = ch.to_string();
                     self.state = LexerState::Operator;
                     EvaluateCharResult::Valid
                 } else if ch.is_alphabetic() {
-                    /* Word-based operator */
+                    /* Operator - Regular */
                     self.current_token_bytes = ch.to_string();
                     self.state = LexerState::Operator;
+                    EvaluateCharResult::Valid
+                } else if ch == '$' {
+                    /* VariableIdentifier  */
+                    // Vvariable_nameariable  e
+                    self.current_token_bytes = format!(""); // @NOTE $ symbol is removed
+                    self.state = LexerState::VariableIdentifier;
                     EvaluateCharResult::Valid
                 } else {
                     /* Unhandled */
@@ -158,6 +175,21 @@ impl Lexer {
                     }
                 }
             }
+            LexerState::VariableIdentifier => {
+                if ch.is_alphanumeric() {
+                    // Continue building variable identifier
+                    self.current_token_bytes.push(ch);
+                    EvaluateCharResult::Valid
+                } else {
+                    // Anything else - end of identifier
+                    match self.end_token() {
+                        EndTokenResult::Valid => {
+                            self.reevaluate_char_in_new_state(LexerState::Default, ch)
+                        }
+                        EndTokenResult::Invalid(err) => EvaluateCharResult::Invalid(err),
+                    }
+                }
+            }
         }
     }
 
@@ -172,6 +204,9 @@ impl Lexer {
             }
             LexerState::Operator => {
                 self.process_new_token(Token::new_operator(&self.current_token_bytes))
+            }
+            LexerState::VariableIdentifier => {
+                self.process_new_token(Token::new_variable_identifier(&self.current_token_bytes))
             }
         }
     }

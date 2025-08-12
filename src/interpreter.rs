@@ -1,22 +1,24 @@
-use crate::lexer::Token;
+use crate::{interpreter::scope::Scope, lexer::Token};
 
 mod operators;
+mod scope;
 
 #[derive(Debug, Clone)]
 pub enum Operand {
     Number(f64),
+    Variable(String),
 }
 
 pub struct Interpreter {
     token_stack: Vec<Token>,
-    pub operand_stack: Vec<Operand>,
+    scopes: Vec<Scope>,
 }
 
 impl Interpreter {
     pub fn new(token_stack: Vec<Token>) -> Self {
         Self {
             token_stack,
-            operand_stack: Vec::new(),
+            scopes: vec![Scope::new()],
         }
     }
 
@@ -24,11 +26,8 @@ impl Interpreter {
         while self.token_stack.len() > 0 {
             let token = self.token_stack.remove(0);
             match token {
-                Token::NumberLiteral(value) => {
-                    self.operand_stack.push(Operand::Number(value));
-                }
                 Token::Operator(op) => {
-                    match self.execute_operator(&op) {
+                    match operators::execute_operator(self, &op) {
                         Ok(_) => { /* 😎 */ }
                         Err(err) => {
                             // @TODO line/column number or whatever.
@@ -37,53 +36,32 @@ impl Interpreter {
                         }
                     }
                 }
+                Token::NumberLiteral(value) => {
+                    self.current_scope().push_operand(Operand::Number(value));
+                }
+                Token::VariableIdentifier(variable_name) => {
+                    self.current_scope().push_operand(Operand::Variable(variable_name));
+                }
             }
         }
     }
 
-    pub fn _pop_operand_and_parse<TResult, F>(
-        &mut self,
-        token_type_name: &str,
-        parser: F,
-    ) -> Result<TResult, String>
-    where
-        F: FnOnce(Operand) -> Option<TResult>,
-    {
-        match self.operand_stack.pop() {
-            Some(token) => match parser(token.clone()) {
-                Some(result) => Ok(result),
-                None => Err(format!(
-                    "Expected token of type '{}' but found: {:?}",
-                    token_type_name, token
-                )),
-            },
-            None => Err(format!("Token stack is empty!")),
-        }
+    pub fn push_new_scope(&mut self) {
+        self.scopes.push(Scope::new());
     }
 
-    pub fn pop_operand_number_literal(&mut self) -> Result<f64, String> {
-        self._pop_operand_and_parse("NumberLiteral", |token| match token {
-            Operand::Number(value) => Some(value),
-            _ => None,
-        })
+    pub fn pop_scope(&mut self) -> Scope {
+        if self.scopes.len() == 1 {
+            panic!("Invalid operation: Cannot pop root scope")
+        }
+
+        self.scopes.pop().expect("Unexpected error: No scopes to pop")
     }
 
-    pub fn pop_operand_any(&mut self) -> Result<Operand, String> {
-        let token = self.operand_stack.pop();
-        match token {
-            Some(token) => Ok(token),
-            None => Err(format!("Token stack is empty!")),
+    pub fn current_scope(&mut self) -> &mut Scope {
+        match self.scopes.last_mut() {
+            Some(scope) => scope,
+            None => panic!("Unexpected error: No execution scopes available"),
         }
-    }
-
-    fn execute_operator(&mut self, operator: &String) -> Result<(), String> {
-        if operators::math::execute(self, operator)? {
-            return Ok(());
-        }
-        if operators::io::execute(self, operator)? {
-            return Ok(());
-        }
-
-        Err(format!("Unknown operator: {}", operator))
     }
 }

@@ -3,30 +3,30 @@ use crate::interpreter::{Interpreter, Operand};
 pub fn execute(interpreter: &mut Interpreter, operator: &str) -> Result<bool, String> {
     match operator {
         "+" => {
-            let right = interpreter.pop_operand_number_literal()?;
-            let left = interpreter.pop_operand_number_literal()?;
-            interpreter.operand_stack.push(Operand::Number(left + right));
+            let right = interpreter.current_scope().pop_operand_number_literal()?;
+            let left = interpreter.current_scope().pop_operand_number_literal()?;
+            interpreter.current_scope().push_operand(Operand::Number(left + right));
             Ok(true)
         }
         "-" => {
-            let right = interpreter.pop_operand_number_literal()?;
-            let left = interpreter.pop_operand_number_literal()?;
-            interpreter.operand_stack.push(Operand::Number(left - right));
+            let right = interpreter.current_scope().pop_operand_number_literal()?;
+            let left = interpreter.current_scope().pop_operand_number_literal()?;
+            interpreter.current_scope().push_operand(Operand::Number(left - right));
             Ok(true)
         }
         "*" => {
-            let right = interpreter.pop_operand_number_literal()?;
-            let left = interpreter.pop_operand_number_literal()?;
-            interpreter.operand_stack.push(Operand::Number(left * right));
+            let right = interpreter.current_scope().pop_operand_number_literal()?;
+            let left = interpreter.current_scope().pop_operand_number_literal()?;
+            interpreter.current_scope().push_operand(Operand::Number(left * right));
             Ok(true)
         }
         "/" => {
-            let right = interpreter.pop_operand_number_literal()?;
-            let left = interpreter.pop_operand_number_literal()?;
+            let right = interpreter.current_scope().pop_operand_number_literal()?;
+            let left = interpreter.current_scope().pop_operand_number_literal()?;
             match right {
                 0.0 => Err(format!("Division by zero")),
                 _ => {
-                    interpreter.operand_stack.push(Operand::Number(left / right));
+                    interpreter.current_scope().push_operand(Operand::Number(left / right));
                     Ok(true)
                 }
             }
