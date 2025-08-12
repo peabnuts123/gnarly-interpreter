@@ -1,0 +1,13 @@
+number string boolean number[] number[][] string[] string[][] boolean[] boolean[][][]
+$variable            $top1 $or_other $CONSTANT_VALUE
+while end do if for_each define_operator
+$variable[1] $array.length etc
+%merge_sort %array.add %%something %else$length
+2 22 123 123.45 -123 -123.45 8888888888.88118818181
+"string" 'string' 'string"hello"world' "string'hello'world"
+true false true_if_two falseify
+[1 2 3 4 5] [] [[1 2 3]] [$variable 1 +] #comment
+# $variable this is a comment %something
+a
+$
+" hello
