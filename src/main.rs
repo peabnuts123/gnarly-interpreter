@@ -3,10 +3,13 @@ use std::fs;
 use std::path::PathBuf;
 use std::process;
 
-use crate::{interpreter::Interpreter, lexer::{Lexer, Token}};
+use crate::{
+    interpreter::{Interpreter, Operand},
+    lexer::{Lexer, Token},
+};
 
-mod lexer;
 mod interpreter;
+mod lexer;
 
 #[derive(Parser)]
 #[command(name = "Gnarly")]
@@ -17,11 +20,6 @@ struct Cli {
     #[arg(help = "Path to the program's main entrypoint")]
     file: PathBuf,
 }
-
-// struct NumberLiteralState {
-//     is_positive: bool,
-//     string_value: String,
-// }
 
 fn main() {
     let cli = Cli::parse();
@@ -62,16 +60,16 @@ fn main() {
     interpreter.run();
 
     // Print results @DEBUG
-    if interpreter.operand_stack.len() == 1 {
-        if let Some(Token::NumberLiteral(result)) = interpreter.operand_stack.last() {
-            println!("Result: {}", result);
-        }
-    } else if interpreter.operand_stack.len() > 1 {
-        println!(
-            "Warning: {} operands left on stack",
-            interpreter.operand_stack.len()
-        );
-    } else {
-        println!("No result");
-    }
+    // if interpreter.operand_stack.len() == 1 {
+    //     if let Some(Operand::Number(result)) = interpreter.operand_stack.last() {
+    //         println!("Result: {}", result);
+    //     }
+    // } else if interpreter.operand_stack.len() > 1 {
+    //     println!(
+    //         "Warning: {} operands left on stack",
+    //         interpreter.operand_stack.len()
+    //     );
+    // } else {
+    //     println!("No result");
+    // }
 }
