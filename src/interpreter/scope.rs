@@ -25,8 +25,8 @@ impl Scope {
         self.variable_state.insert(name, value);
     }
 
-    pub fn get_variable(&self, name: String) -> Option<&Operand> {
-        self.variable_state.get(&name)
+    pub fn get_variable(&self, name: String) -> Option<Operand> {
+        self.variable_state.get(&name).cloned()
     }
 
     pub fn push_operand(&mut self, operand: Operand) {
@@ -34,17 +34,22 @@ impl Scope {
     }
 
     pub fn pop_operand_number_literal(&mut self) -> Result<f64, String> {
-        // @TODO Interpret the value of variables
         self._pop_operand_and_parse("NumberLiteral", |token| match token {
             Operand::Number(value) => Some(value),
             _ => None,
-        })
+        }, true)
+    }
+    pub fn pop_operand_string_literal(&mut self) -> Result<String, String> {
+        self._pop_operand_and_parse("StringLiteral", |token| match token {
+            Operand::String(value) => Some(value),
+            _ => None,
+        }, true)
     }
     pub fn pop_operand_variable_identifier(&mut self) -> Result<String, String> {
         self._pop_operand_and_parse("VariableIdentifier", |token| match token {
             Operand::Variable(value) => Some(value),
             _ => None,
-        })
+        }, false)
     }
     pub fn pop_operand_any(&mut self) -> Result<Operand, String> {
         let token = self.operand_stack.pop();
@@ -58,11 +63,18 @@ impl Scope {
         &mut self,
         token_type_name: &str,
         parser: F,
+        lookup_variable_value: bool,
     ) -> Result<TResult, String>
     where
         F: FnOnce(Operand) -> Option<TResult>,
     {
-        match self.operand_stack.pop() {
+        let mut operand = self.operand_stack.pop();
+
+        if lookup_variable_value && let Some(Operand::Variable(variable_name)) = operand {
+            operand = self.get_variable(variable_name);
+        }
+
+        match operand {
             Some(token) => match parser(token.clone()) {
                 Some(result) => Ok(result),
                 None => Err(format!(

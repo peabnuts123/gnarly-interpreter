@@ -11,7 +11,7 @@ enum LexerState {
     // Array,
     // Comment,
     NumberLiteral,
-    // StringLiteral,
+    StringLiteral,
     // BooleanLiteral,
     // NullLiteral,
     Operator,
@@ -22,31 +22,33 @@ enum LexerState {
 #[derive(Debug, Clone)]
 pub enum Token {
     NumberLiteral(f64),
+    StringLiteral(String),
     Operator(String),
     VariableIdentifier(String),
 }
 
 impl Token {
     pub fn new_number_literal(raw_value: &str) -> Result<Self, String> {
-        // Parse the raw string value into a number literal
         let value = raw_value
             .parse::<f64>()
             .map_err(|_| format!("Invalid number: {}", raw_value))?;
         Ok(Token::NumberLiteral(value))
     }
-
+    pub fn new_string_literal(raw_value: &str) -> Result<Self, String> {
+        Ok(Token::StringLiteral(raw_value.to_string()))
+    }
     pub fn new_operator(raw_value: &str) -> Result<Self, String> {
-        // Create an operator token from the raw string value
         if raw_value.is_empty() {
             Err(format!("Cannot create operator token from empty string"))
         } else {
             Ok(Token::Operator(raw_value.to_string()))
         }
     }
-
     pub fn new_variable_identifier(raw_value: &str) -> Result<Self, String> {
         if raw_value.is_empty() {
-            Err(format!("Cannot create variable identifier token from empty string"))
+            Err(format!(
+                "Cannot create variable identifier token from empty string"
+            ))
         } else {
             Ok(Token::VariableIdentifier(raw_value.to_string()))
         }
@@ -111,6 +113,11 @@ impl Lexer {
                     self.current_token_bytes = ch.to_string();
                     self.state = LexerState::NumberLiteral;
                     EvaluateCharResult::Valid
+                } else if ch == '"' {
+                    /* StringLiteral */
+                    self.current_token_bytes = format!(""); // @NOTE " symbol is stripped
+                    self.state = LexerState::StringLiteral;
+                    EvaluateCharResult::Valid
                 } else if SPECIAL_OPERATOR_CHARS.contains(&ch) {
                     /* Operator - Special */
                     // Special symbols (like +*-/) do not follow the normal regex for operators
@@ -124,9 +131,8 @@ impl Lexer {
                     self.state = LexerState::Operator;
                     EvaluateCharResult::Valid
                 } else if ch == '$' {
-                    /* VariableIdentifier  */
-                    // Vvariable_nameariable  e
-                    self.current_token_bytes = format!(""); // @NOTE $ symbol is removed
+                    /* VariableIdentifier */
+                    self.current_token_bytes = format!(""); // @NOTE $ symbol is stripped
                     self.state = LexerState::VariableIdentifier;
                     EvaluateCharResult::Valid
                 } else {
@@ -150,10 +156,34 @@ impl Lexer {
                     }
                 }
             }
+            LexerState::StringLiteral => {
+                // String is terminated by non-escaped quotemark
+                // Strings can even span over multiple lines
+                if ch == '"' && self.scanner.peek_offset(-1) != Some('\\') {
+                    // Terminate string
+                    match self.end_token() {
+                        EndTokenResult::Valid => {
+                            self.state = LexerState::Default;
+                            EvaluateCharResult::Valid
+                        },
+                        EndTokenResult::Invalid(err) => EvaluateCharResult::Invalid(err),
+                    }
+                } else if ch == '\\' {
+                    // Skip escape character
+                    // Combination of escape + char will be handled by next char
+                    EvaluateCharResult::Valid
+                } else {
+                    // Continue string literal
+                    self.current_token_bytes.push(ch);
+                    EvaluateCharResult::Valid
+                }
+            }
             LexerState::Operator => {
                 // Check if we're building a special symbol operator or word-based operator
                 if self.current_token_bytes.len() == 1
-                    && SPECIAL_OPERATOR_CHARS.contains(&self.current_token_bytes.chars().next().unwrap()) {
+                    && SPECIAL_OPERATOR_CHARS
+                        .contains(&self.current_token_bytes.chars().next().unwrap())
+                {
                     // Special symbol operator - end immediately
                     match self.end_token() {
                         EndTokenResult::Valid => {
@@ -176,7 +206,7 @@ impl Lexer {
                 }
             }
             LexerState::VariableIdentifier => {
-                if ch.is_alphanumeric() {
+                if ch.is_alphanumeric() || ch == '_' {
                     // Continue building variable identifier
                     self.current_token_bytes.push(ch);
                     EvaluateCharResult::Valid
@@ -201,6 +231,9 @@ impl Lexer {
             }
             LexerState::NumberLiteral => {
                 self.process_new_token(Token::new_number_literal(&self.current_token_bytes))
+            }
+            LexerState::StringLiteral => {
+                self.process_new_token(Token::new_string_literal(&self.current_token_bytes))
             }
             LexerState::Operator => {
                 self.process_new_token(Token::new_operator(&self.current_token_bytes))

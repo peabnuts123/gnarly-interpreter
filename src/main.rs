@@ -50,6 +50,7 @@ fn main() {
         // @TODO token string function
         match token {
             Token::NumberLiteral(value) => print!("[Number({})] ", value),
+            Token::StringLiteral(value) => print!("[Number({})] ", value.replace("\n", "\\n")),
             Token::Operator(op) => print!("[Operator({})] ", op),
             Token::VariableIdentifier(var_name) => print!("[Variable(${var_name})] "),
         }

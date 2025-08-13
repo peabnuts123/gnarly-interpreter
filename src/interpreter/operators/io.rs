@@ -6,8 +6,9 @@ pub fn execute(interpreter: &mut Interpreter, operator: &str) -> Result<bool, St
             let operand = interpreter.current_scope().pop_operand_any()?;
 
             // Common print function
-            let print_value = |op: &Operand| match op {
+            let print_value = |op| match op {
                 Operand::Number(value) => println!("{value}"),
+                Operand::String(value) => println!("{value}"),
                 Operand::Variable(_) => panic!("Cannot print: Invalid type. Variable pointing to a variable."),
             };
 
@@ -20,7 +21,7 @@ pub fn execute(interpreter: &mut Interpreter, operator: &str) -> Result<bool, St
                 }
                 // Any thing else, print directly
                 operand => {
-                    print_value(&operand);
+                    print_value(operand);
                 }
             }
             Ok(true)

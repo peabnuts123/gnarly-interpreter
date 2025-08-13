@@ -12,14 +12,21 @@ impl CharScanner {
         }
     }
 
-    /// Get the current character without advancing
     pub fn peek(&self) -> Option<char> {
         self.chars.get(self.position).copied()
     }
 
-    /// Get the character at a relative offset from current position
-    pub fn peek_ahead(&self, offset: usize) -> Option<char> {
-        self.chars.get(self.position + offset).copied()
+    pub fn peek_offset(&self, offset: isize) -> Option<char> {
+        // @NOTE -1 to match caller expectations
+        // Because `position` has already been incremented by next()
+        //  peek_offset(1)  = peek()    = the next character
+        //  peek_offset(2)  =           = the character after next
+        //  peek_offset(-1) =           = previous character before current
+        let i = (self.position as isize) + offset - 1;
+        if i < 0 {
+            return None;
+        }
+        self.chars.get(i as usize).copied()
     }
 }
 

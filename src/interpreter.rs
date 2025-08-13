@@ -6,6 +6,7 @@ mod scope;
 #[derive(Debug, Clone)]
 pub enum Operand {
     Number(f64),
+    String(String),
     Variable(String),
 }
 
@@ -38,6 +39,9 @@ impl Interpreter {
                 }
                 Token::NumberLiteral(value) => {
                     self.current_scope().push_operand(Operand::Number(value));
+                }
+                Token::StringLiteral(value) => {
+                    self.current_scope().push_operand(Operand::String(value));
                 }
                 Token::VariableIdentifier(variable_name) => {
                     self.current_scope().push_operand(Operand::Variable(variable_name));
