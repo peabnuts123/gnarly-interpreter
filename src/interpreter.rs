@@ -41,7 +41,8 @@ impl Interpreter {
                     self.current_scope().push_operand(Operand::Number(value));
                 }
                 Token::StringLiteral(value) => {
-                    self.current_scope().push_operand(Operand::String(value));
+                    let interpolated = self.current_scope().interpolate_string_variables(&value);
+                    self.current_scope().push_operand(Operand::String(interpolated));
                 }
                 Token::VariableIdentifier(variable_name) => {
                     self.current_scope().push_operand(Operand::Variable(variable_name));

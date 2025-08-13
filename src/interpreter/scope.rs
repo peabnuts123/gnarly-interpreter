@@ -15,6 +15,40 @@ impl Scope {
         }
     }
 
+    pub fn stringify_operand(&self, operand: &Operand) -> String {
+        match operand {
+            Operand::Number(value) => value.to_string(),
+            Operand::String(value) => value.clone(),
+            Operand::Variable(name) => {
+                match self.get_variable(name.clone()) {
+                    Some(inner) => self.stringify_operand(&inner),
+                    None => panic!("Cannot stringify: Variable '{}' not found", name),
+                }
+            }
+        }
+    }
+
+    pub fn interpolate_string_variables(&self, input: &str) -> String {
+        // @TODO Share with lexer code
+        let re = regex::Regex::new(r"\$([a-zA-Z_][a-zA-Z0-9_]*)").unwrap();
+        let mut result = String::new();
+        let mut last_end = 0;
+        for cap in re.captures_iter(input) {
+            if let Some(m) = cap.get(0) {
+                result.push_str(&input[last_end..m.start()]);
+                let var_name = &cap[1];
+                if let Some(val) = self.get_variable(var_name.to_string()) {
+                    result.push_str(&self.stringify_operand(&val));
+                } else {
+                    panic!("Cannot interpolate: Variable '{}' not found", var_name);
+                }
+                last_end = m.end();
+            }
+        }
+        result.push_str(&input[last_end..]);
+        result
+    }
+
     pub fn set_variable(&mut self, name: String, value: Operand) {
         if let Operand::Variable(_) = value {
             // @TODO ideally the compiler would enforce this, but we are just

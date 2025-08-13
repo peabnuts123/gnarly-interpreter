@@ -3,6 +3,7 @@ use crate::interpreter::Interpreter;
 pub mod general;
 pub mod io;
 pub mod math;
+pub mod string;
 
 pub fn execute_operator(interpreter: &mut Interpreter, operator: &String) -> Result<(), String> {
     if math::execute(interpreter, operator)? {
@@ -12,6 +13,9 @@ pub fn execute_operator(interpreter: &mut Interpreter, operator: &String) -> Res
         return Ok(());
     }
     if general::execute(interpreter, operator)? {
+        return Ok(());
+    }
+    if string::execute(interpreter, operator)? {
         return Ok(());
     }
 

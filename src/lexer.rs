@@ -206,6 +206,7 @@ impl Lexer {
                 }
             }
             LexerState::VariableIdentifier => {
+                // @TODO Variable names can't start with a number
                 if ch.is_alphanumeric() || ch == '_' {
                     // Continue building variable identifier
                     self.current_token_bytes.push(ch);
