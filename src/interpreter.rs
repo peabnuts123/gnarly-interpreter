@@ -11,37 +11,28 @@ pub enum Operand {
 }
 
 pub struct Interpreter {
-    token_stack: Vec<Token>,
     scopes: Vec<Scope>,
 }
 
 impl Interpreter {
-    pub fn new(token_stack: Vec<Token>) -> Self {
+    pub fn new() -> Self {
         Self {
-            token_stack,
             scopes: vec![Scope::new()],
         }
     }
 
-    pub fn run(&mut self) {
-        while self.token_stack.len() > 0 {
-            let token = self.token_stack.remove(0);
+    pub fn run(&mut self, mut token_stack: Vec<Token>) -> Result<(), String> {
+        while token_stack.len() > 0 {
+            let token = token_stack.remove(0);
             match token {
                 Token::Operator(op) => {
-                    match operators::execute_operator(self, &op) {
-                        Ok(_) => { /* 😎 */ }
-                        Err(err) => {
-                            // @TODO line/column number or whatever.
-                            eprintln!("Error executing operator '{}': {}", op, err);
-                            return;
-                        }
-                    }
+                    operators::execute_operator(self, &op)?
                 }
                 Token::NumberLiteral(value) => {
                     self.current_scope().push_operand(Operand::Number(value));
                 }
                 Token::StringLiteral(value) => {
-                    let interpolated = self.current_scope().interpolate_string_variables(&value);
+                    let interpolated = self.current_scope().interpolate_string_variables(&value)?;
                     self.current_scope().push_operand(Operand::String(interpolated));
                 }
                 Token::VariableIdentifier(variable_name) => {
@@ -49,6 +40,7 @@ impl Interpreter {
                 }
             }
         }
+        Ok(())
     }
 
     pub fn push_new_scope(&mut self) {
@@ -65,6 +57,13 @@ impl Interpreter {
 
     pub fn current_scope(&mut self) -> &mut Scope {
         match self.scopes.last_mut() {
+            Some(scope) => scope,
+            None => panic!("Unexpected error: No execution scopes available"),
+        }
+    }
+
+    pub fn current_scope_readonly(&self) -> &Scope {
+        match self.scopes.last() {
             Some(scope) => scope,
             None => panic!("Unexpected error: No execution scopes available"),
         }

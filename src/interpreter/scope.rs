@@ -15,20 +15,20 @@ impl Scope {
         }
     }
 
-    pub fn stringify_operand(&self, operand: &Operand) -> String {
+    pub fn stringify_operand(&self, operand: &Operand) -> Result<String, String> {
         match operand {
-            Operand::Number(value) => value.to_string(),
-            Operand::String(value) => value.clone(),
+            Operand::Number(value) => Ok(value.to_string()),
+            Operand::String(value) => Ok(value.clone()),
             Operand::Variable(name) => {
                 match self.get_variable(name.clone()) {
                     Some(inner) => self.stringify_operand(&inner),
-                    None => panic!("Cannot stringify: Variable '{}' not found", name),
+                    None => Err(format!("Cannot stringify: Variable '{}' not found", name)),
                 }
             }
         }
     }
 
-    pub fn interpolate_string_variables(&self, input: &str) -> String {
+    pub fn interpolate_string_variables(&self, input: &str) -> Result<String, String> {
         // @TODO Share with lexer code
         let re = regex::Regex::new(r"\$([a-zA-Z_][a-zA-Z0-9_]*)").unwrap();
         let mut result = String::new();
@@ -38,15 +38,15 @@ impl Scope {
                 result.push_str(&input[last_end..m.start()]);
                 let var_name = &cap[1];
                 if let Some(val) = self.get_variable(var_name.to_string()) {
-                    result.push_str(&self.stringify_operand(&val));
+                    result.push_str(&self.stringify_operand(&val)?);
                 } else {
-                    panic!("Cannot interpolate: Variable '{}' not found", var_name);
+                    return Err(format!("Cannot interpolate: Variable '{}' not found", var_name));
                 }
                 last_end = m.end();
             }
         }
         result.push_str(&input[last_end..]);
-        result
+        Ok(result)
     }
 
     pub fn set_variable(&mut self, name: String, value: Operand) {
@@ -91,6 +91,10 @@ impl Scope {
             Some(token) => Ok(token),
             None => Err(format!("Token stack is empty!")),
         }
+    }
+
+    pub fn get_operand_stack(&self) -> &Vec<Operand> {
+        &self.operand_stack
     }
 
     fn _pop_operand_and_parse<TResult, F>(
