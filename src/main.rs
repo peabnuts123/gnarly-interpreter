@@ -116,18 +116,23 @@ fn run_repl() {
                 };
 
                 // Run the tokens through interpreter
-                let operand_stack_size = interpreter.current_scope_readonly().get_operand_stack().len() as isize;
+                let operand_stack_size = interpreter
+                    .current_scope_readonly()
+                    .get_operand_stack()
+                    .len() as isize;
                 match interpreter.run(lexer_result.token_list) {
                     Ok(_) => {
                         // Print most recent operand, if any pushed to the stack
-                        let operand_stack = interpreter.current_scope_readonly().get_operand_stack();
+                        let operand_stack =
+                            interpreter.current_scope_readonly().get_operand_stack();
                         let operand_stack_delta = operand_stack.len() as isize - operand_stack_size;
                         if operand_stack_delta > 0 {
-                            match operand_stack.last().unwrap() {
-                                Operand::Number(value) => println!("{}", value),
-                                Operand::String(value) => println!("\"{}\"", value),
-                                Operand::Variable(name) => println!("${}", name),
-                            }
+                            println!(
+                                "{}",
+                                interpreter
+                                    .current_scope_readonly()
+                                    .operand_display(operand_stack.last().unwrap())
+                            )
                         }
                     }
                     Err(err) => {

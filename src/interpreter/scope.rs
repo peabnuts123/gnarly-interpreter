@@ -15,16 +15,32 @@ impl Scope {
         }
     }
 
-    pub fn stringify_operand(&self, operand: &Operand) -> Result<String, String> {
+    /// Convert an operand into a string, for printing.
+    /// e.g. `"hello"` => `hello`
+    /// e.g. `$name` => `Michael`
+    pub fn operand_to_string(&self, operand: &Operand) -> Result<String, String> {
         match operand {
             Operand::Number(value) => Ok(value.to_string()),
             Operand::String(value) => Ok(value.clone()),
-            Operand::Variable(name) => {
-                match self.get_variable(name.clone()) {
-                    Some(inner) => self.stringify_operand(&inner),
-                    None => Err(format!("Cannot stringify: Variable '{}' not found", name)),
-                }
-            }
+            Operand::Variable(name) => match self.get_variable(name.clone()) {
+                Some(inner) => self.operand_to_string(&inner),
+                None => Err(format!("Cannot stringify: Variable '{}' not found", name)),
+            },
+        }
+    }
+
+    /// Display the actual runtime value of an operand, for debugging.
+    /// e.g. `"hello"` => `"hello"`,
+    /// e.g. `$name` => `$name ("Michael")`
+    pub fn operand_display(&self, operand: &Operand) -> String {
+        match operand {
+            Operand::Number(value) => format!("{}", value),
+            Operand::String(value) => format!("\"{}\"", value),
+            // Operand::Variable(name) => println!("${}", name),
+            Operand::Variable(name) => match self.get_variable(name.clone()) {
+                Some(inner) => format!("${} ({})", name, self.operand_display(&inner)),
+                None => format!("${} (unset)", name),
+            },
         }
     }
 
@@ -38,9 +54,12 @@ impl Scope {
                 result.push_str(&input[last_end..m.start()]);
                 let var_name = &cap[1];
                 if let Some(val) = self.get_variable(var_name.to_string()) {
-                    result.push_str(&self.stringify_operand(&val)?);
+                    result.push_str(&self.operand_to_string(&val)?);
                 } else {
-                    return Err(format!("Cannot interpolate: Variable '{}' not found", var_name));
+                    return Err(format!(
+                        "Cannot interpolate: Variable '{}' not found",
+                        var_name
+                    ));
                 }
                 last_end = m.end();
             }
@@ -68,22 +87,34 @@ impl Scope {
     }
 
     pub fn pop_operand_number_literal(&mut self) -> Result<f64, String> {
-        self._pop_operand_and_parse("NumberLiteral", |token| match token {
-            Operand::Number(value) => Some(value),
-            _ => None,
-        }, true)
+        self._pop_operand_and_parse(
+            "NumberLiteral",
+            |token| match token {
+                Operand::Number(value) => Some(value),
+                _ => None,
+            },
+            true,
+        )
     }
     pub fn pop_operand_string_literal(&mut self) -> Result<String, String> {
-        self._pop_operand_and_parse("StringLiteral", |token| match token {
-            Operand::String(value) => Some(value),
-            _ => None,
-        }, true)
+        self._pop_operand_and_parse(
+            "StringLiteral",
+            |token| match token {
+                Operand::String(value) => Some(value),
+                _ => None,
+            },
+            true,
+        )
     }
     pub fn pop_operand_variable_identifier(&mut self) -> Result<String, String> {
-        self._pop_operand_and_parse("VariableIdentifier", |token| match token {
-            Operand::Variable(value) => Some(value),
-            _ => None,
-        }, false)
+        self._pop_operand_and_parse(
+            "VariableIdentifier",
+            |token| match token {
+                Operand::Variable(value) => Some(value),
+                _ => None,
+            },
+            false,
+        )
     }
     pub fn pop_operand_any(&mut self) -> Result<Operand, String> {
         let token = self.operand_stack.pop();
