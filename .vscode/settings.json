@@ -1,17 +1,10 @@
 {
-  "go.formatTool": "goimports",
-  "go.buildOnSave": "workspace",
-  "go.enableCodeLens": {
-    "references": false,
-    "runtest": false
+  "files.associations": {
+    "*.gnarly": "shellscript"
   },
-  "go.lintOnSave": "off",
-  "go.liveErrors": {
-    "enabled": true,
-    "delay": 500
-  },
-  "go.useLanguageServer": false,
-  "cSpell.words": [
-    "Blag"
-  ]
+  "shellcheck.enable": false,
+  "[rust]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true
+  }
 }
