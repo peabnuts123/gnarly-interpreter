@@ -1,22 +1,22 @@
-use crate::interpreter::Interpreter;
+use crate::execution_context::ExecutionContext;
 
-pub fn execute(interpreter: &mut Interpreter, operator: &str) -> Result<bool, String> {
+pub fn execute(context: &mut ExecutionContext, operator: &str) -> Result<bool, String> {
     match operator {
         "print" => {
-            let operand = interpreter.current_scope().pop_operand_any()?;
-            let output = interpreter.current_scope().operand_to_string(&operand)?;
+            let operand = context.pop_operand_any()?;
+            let output = context.operand_to_string(&operand)?;
             println!("{output}");
             Ok(true)
         }
         "print.stack" => {
             print!("Stack [");
-            let scope = interpreter.current_scope_readonly();
+            let scope = context.current_scope_readonly();
             let stack = scope.get_operand_stack();
             for (i, operand) in stack.iter().enumerate() {
                 if i > 0 {
                     print!(", ");
                 }
-                print!("{}", scope.operand_display(operand));
+                print!("{}", context.operand_display(operand));
             }
             println!("]");
             Ok(true)

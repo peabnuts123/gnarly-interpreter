@@ -17,6 +17,8 @@ enum LexerState {
     Operator,
     VariableIdentifier,
     // Word,
+    ScopeStart,
+    ScopeEnd,
 }
 
 #[derive(Debug, Clone)]
@@ -25,6 +27,8 @@ pub enum Token {
     StringLiteral(String),
     Operator(String),
     VariableIdentifier(String),
+    ScopeStart,
+    ScopeEnd,
 }
 
 impl Token {
@@ -52,6 +56,12 @@ impl Token {
         } else {
             Ok(Token::VariableIdentifier(raw_value.to_string()))
         }
+    }
+    pub fn new_scope_start() -> Result<Self, String> {
+        Ok(Token::ScopeStart)
+    }
+    pub fn new_scope_end() -> Result<Self, String> {
+        Ok(Token::ScopeEnd)
     }
 }
 
@@ -135,6 +145,12 @@ impl Lexer {
                     self.current_token_bytes = format!(""); // @NOTE $ symbol is stripped
                     self.state = LexerState::VariableIdentifier;
                     EvaluateCharResult::Valid
+                } else if ch == '{' {
+                    /* ScopeStart */
+                    self.reevaluate_char_in_new_state(LexerState::ScopeStart, ch)
+                } else if ch == '}' {
+                    /* ScopeEnd */
+                    self.reevaluate_char_in_new_state(LexerState::ScopeEnd, ch)
                 } else {
                     /* Unhandled */
                     EvaluateCharResult::Invalid(format!("Unexpected character: '{}'", ch))
@@ -165,7 +181,7 @@ impl Lexer {
                         EndTokenResult::Valid => {
                             self.state = LexerState::Default;
                             EvaluateCharResult::Valid
-                        },
+                        }
                         EndTokenResult::Invalid(err) => EvaluateCharResult::Invalid(err),
                     }
                 } else if ch == '\\' {
@@ -221,11 +237,33 @@ impl Lexer {
                     }
                 }
             }
+            LexerState::ScopeStart => {
+                // Scope start is always just one character
+                self.current_token_bytes = format!("{}", ch);
+                match self.end_token() {
+                    EndTokenResult::Valid => {
+                        self.state = LexerState::Default;
+                        EvaluateCharResult::Valid
+                    }
+                    EndTokenResult::Invalid(err) => EvaluateCharResult::Invalid(err),
+                }
+            }
+            LexerState::ScopeEnd => {
+                // Scope end is always just one character
+                self.current_token_bytes = format!("{}", ch);
+                match self.end_token() {
+                    EndTokenResult::Valid => {
+                        self.state = LexerState::Default;
+                        EvaluateCharResult::Valid
+                    }
+                    EndTokenResult::Invalid(err) => EvaluateCharResult::Invalid(err),
+                }
+            }
         }
     }
 
     fn end_token(&mut self) -> EndTokenResult {
-        match self.state {
+        let result = match self.state {
             LexerState::Default => {
                 /* No-op */
                 EndTokenResult::Valid
@@ -242,7 +280,16 @@ impl Lexer {
             LexerState::VariableIdentifier => {
                 self.process_new_token(Token::new_variable_identifier(&self.current_token_bytes))
             }
-        }
+            LexerState::ScopeStart => {
+                self.process_new_token(Token::new_scope_start())
+            }
+            LexerState::ScopeEnd => self.process_new_token(Token::new_scope_end()),
+        };
+
+        // Clear current token
+        self.current_token_bytes = String::new();
+
+        result
     }
     fn process_new_token(&mut self, token: Result<Token, String>) -> EndTokenResult {
         match token {

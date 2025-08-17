@@ -1,11 +1,11 @@
-use crate::interpreter::{Interpreter, Operand};
+use crate::{execution_context::ExecutionContext, interpreter::Operand};
 
-pub fn execute(interpreter: &mut Interpreter, operator: &str) -> Result<bool, String> {
+pub fn execute(context: &mut ExecutionContext, operator: &str) -> Result<bool, String> {
     match operator {
         "string.concat" => {
-            let right = interpreter.current_scope().pop_operand_string_literal()?;
-            let left = interpreter.current_scope().pop_operand_string_literal()?;
-            interpreter.current_scope().push_operand(Operand::String(format!("{}{}", left, right)));
+            let right = context.pop_operand_string_literal()?;
+            let left = context.pop_operand_string_literal()?;
+            context.push_operand(Operand::String(format!("{}{}", left, right)));
             Ok(true)
         }
         _ => Ok(false),

@@ -1,21 +1,21 @@
-use crate::interpreter::Interpreter;
+use crate::execution_context::ExecutionContext;
 
 pub mod general;
 pub mod io;
 pub mod math;
 pub mod string;
 
-pub fn execute_operator(interpreter: &mut Interpreter, operator: &String) -> Result<(), String> {
-    if math::execute(interpreter, operator)? {
+pub fn execute_operator(context: &mut ExecutionContext, operator: &String) -> Result<(), String> {
+    if math::execute(context, operator)? {
         return Ok(());
     }
-    if io::execute(interpreter, operator)? {
+    if io::execute(context, operator)? {
         return Ok(());
     }
-    if general::execute(interpreter, operator)? {
+    if general::execute(context, operator)? {
         return Ok(());
     }
-    if string::execute(interpreter, operator)? {
+    if string::execute(context, operator)? {
         return Ok(());
     }
 

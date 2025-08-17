@@ -5,10 +5,11 @@ use std::path::PathBuf;
 use std::process;
 
 use crate::{
-    interpreter::{Interpreter, Operand},
+    interpreter::Interpreter,
     lexer::{Lexer, Token},
 };
 
+mod execution_context;
 mod interpreter;
 mod lexer;
 
@@ -61,11 +62,14 @@ fn run_file(file_path: PathBuf) {
     for token in lexer_result.token_list.iter() {
         // @TODO token string function
         match token {
-            Token::NumberLiteral(value) => print!("[Number({})] ", value),
-            Token::StringLiteral(value) => print!("[Number({})] ", value.replace("\n", "\\n")),
-            Token::Operator(op) => print!("[Operator({})] ", op),
-            Token::VariableIdentifier(var_name) => print!("[Variable(${var_name})] "),
+            Token::NumberLiteral(value) => print!("[Number({})]", value),
+            Token::StringLiteral(value) => print!("[String(\"{}\")]", value.replace("\n", "\\n")),
+            Token::Operator(op) => print!("[Operator({})]", op),
+            Token::VariableIdentifier(var_name) => print!("[Variable(${var_name})]"),
+            Token::ScopeStart => print!("[ScopeStart]"),
+            Token::ScopeEnd => print!("[ScopeEnd]"),
         }
+        print!(" ")
     }
     println!();
 
@@ -117,20 +121,23 @@ fn run_repl() {
 
                 // Run the tokens through interpreter
                 let operand_stack_size = interpreter
+                    .context
                     .current_scope_readonly()
                     .get_operand_stack()
                     .len() as isize;
                 match interpreter.run(lexer_result.token_list) {
                     Ok(_) => {
                         // Print most recent operand, if any pushed to the stack
-                        let operand_stack =
-                            interpreter.current_scope_readonly().get_operand_stack();
+                        let operand_stack = interpreter
+                            .context
+                            .current_scope_readonly()
+                            .get_operand_stack();
                         let operand_stack_delta = operand_stack.len() as isize - operand_stack_size;
                         if operand_stack_delta > 0 {
                             println!(
                                 "{}",
                                 interpreter
-                                    .current_scope_readonly()
+                                    .context
                                     .operand_display(operand_stack.last().unwrap())
                             )
                         }

@@ -1,32 +1,32 @@
-use crate::interpreter::{Interpreter, Operand};
+use crate::{execution_context::ExecutionContext, interpreter::Operand};
 
-pub fn execute(interpreter: &mut Interpreter, operator: &str) -> Result<bool, String> {
+pub fn execute(context: &mut ExecutionContext, operator: &str) -> Result<bool, String> {
     match operator {
         "+" => {
-            let right = interpreter.current_scope().pop_operand_number_literal()?;
-            let left = interpreter.current_scope().pop_operand_number_literal()?;
-            interpreter.current_scope().push_operand(Operand::Number(left + right));
+            let right = context.pop_operand_number_literal()?;
+            let left = context.pop_operand_number_literal()?;
+            context.push_operand(Operand::Number(left + right));
             Ok(true)
         }
         "-" => {
-            let right = interpreter.current_scope().pop_operand_number_literal()?;
-            let left = interpreter.current_scope().pop_operand_number_literal()?;
-            interpreter.current_scope().push_operand(Operand::Number(left - right));
+            let right = context.pop_operand_number_literal()?;
+            let left = context.pop_operand_number_literal()?;
+            context.push_operand(Operand::Number(left - right));
             Ok(true)
         }
         "*" => {
-            let right = interpreter.current_scope().pop_operand_number_literal()?;
-            let left = interpreter.current_scope().pop_operand_number_literal()?;
-            interpreter.current_scope().push_operand(Operand::Number(left * right));
+            let right = context.pop_operand_number_literal()?;
+            let left = context.pop_operand_number_literal()?;
+            context.push_operand(Operand::Number(left * right));
             Ok(true)
         }
         "/" => {
-            let right = interpreter.current_scope().pop_operand_number_literal()?;
-            let left = interpreter.current_scope().pop_operand_number_literal()?;
+            let right = context.pop_operand_number_literal()?;
+            let left = context.pop_operand_number_literal()?;
             match right {
                 0.0 => Err(format!("Division by zero")),
                 _ => {
-                    interpreter.current_scope().push_operand(Operand::Number(left / right));
+                    context.push_operand(Operand::Number(left / right));
                     Ok(true)
                 }
             }
