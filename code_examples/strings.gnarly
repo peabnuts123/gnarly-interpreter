@@ -1,0 +1,17 @@
+"Hello world" print
+
+"Jeff" $name set
+
+"Multiline
+string" $multiline_string set
+
+"name:" print
+$name print
+"multiline string:" print
+$multiline_string print
+
+"String with a \" mark in it" print
+
+"joining two " "strings" string.concat print
+
+"Hello, my name is $name" print

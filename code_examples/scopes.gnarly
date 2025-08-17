@@ -1,0 +1,20 @@
+
+{ 0 1 2 3 } $arr set
+{
+  5 $x set
+  9 $y set
+} $pos set
+
+$arr print
+$pos print
+
+
+"Jeff" $name set
+
+{
+  4 $value set
+  "Local scope: $value" print
+  "Parent scope: $name" print
+}
+"Defined, from outer scope: $name" print
+"Not defined - only in inner scope: $value" print
